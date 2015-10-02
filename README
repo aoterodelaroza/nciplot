@@ -1,7 +1,3 @@
-% nciplot README
-% Alberto Otero de la Roza
-% July 27, 2013
-
 Overview
 --------
 
@@ -10,7 +6,7 @@ visualization of inter- and intra-molecular non-covalent interactions
 (hydrogen bonds, π-π interactions, ...) in systems ranging from small
 dimers to large biomolecules.
 
-[[NCI]] (Non-Covalent Interactions) is a visualization index based on
+NCI (Non-Covalent Interactions) is a visualization index based on
 the electron density ($\rho$) and the reduced density gradient (RDG, $s$),
 defined as:
 
@@ -30,19 +26,6 @@ molecular geometry from an xyz file and computes the density and the
 reduced density gradient on a grid. The calculated values are written
 to a gaussian cube file, along with VMD scripts that allow the direct
 visualization of the results.
-
-Download
---------
-
-**Source code**:
-[tar.bz2](http://gatsby.ucmerced.edu/downloads/nciplot/nciplot.tar.bz2), 
-[tar.gz](http://gatsby.ucmerced.edu/downloads/nciplot/nciplot.tar.gz),
-[zip](http://gatsby.ucmerced.edu/downloads/nciplot/nciplot.zip)
-
-**Recent changes**: [ChangeLog](http://gatsby.ucmerced.edu/downloads/nciplot/ChangeLog)
-
-**Contact**:
-Alberto Otero de la Roza [mailto:aoterodelaroza@ucmerced.edu aoterodelaroza@ucmerced.edu] 
 
 Compilation
 -----------
@@ -341,40 +324,40 @@ The basic references for nciplot are:
 
 * J. Contreras-Garcia, E. Johnson, S. Keinan, R. Chaudret, J-P
   Piquemal, D. Beratan, W. Yang, J. Chem. Theor. Comp. **7**, 625
-  (2011). [link](http://dx.doi.org/10.1021/ct100641a)
+  (2011). (http://dx.doi.org/10.1021/ct100641a)
 * E R. Johnson, S. Keinan, P. Mori-Sanchez, J. Contreras-Garcia, A
   J. Cohen, and W. Yang, J. Am. Chem. Soc., **132**, 6498 (2010). 
-  [link](http://dx.doi.org/10.1021/ja100936w)
+  (http://dx.doi.org/10.1021/ja100936w)
 
 Some other works using NCI:
 
 * J. Contreras-Garcia, E. R. Johnson, W. Yang, J. Phys. Chem. A
-  **115**, 12983 (2011). [link](http://dx.doi.org/10.1021/jp204278k)
+  **115**, 12983 (2011). (http://dx.doi.org/10.1021/jp204278k)
 * J. Contreras-Garcia, M. Calatayud, J-P Piquemal, J. M. Recio,
   Comp. Theo. Chem. **998**, 193 (2012).
-  [link](http://dx.doi.org/10.1016/j.comptc.2012.07.043)
+  (http://dx.doi.org/10.1016/j.comptc.2012.07.043)
 * N. Gillet, R. Chaudret, J. Contreras-Garcia, W. Yang, B. Silvi,
   J.-P.Piquemal, J. Chem. Theor. Comp. **8**, 3993 (2012). 
-  [link](http://dx.doi.org/10.1021/ct300234g)
+  (http://dx.doi.org/10.1021/ct300234g)
 
 NCI for the solid state:
 
 * A. Otero-de-la-Roza, J. Contreras-Garcia, E. R. Johnson,
   Phys. Chem. Chem. Phys. **14**, 12165 (2012).
-  [link](http://dx.doi.org/10.1039/C2CP41395G)
+  (http://dx.doi.org/10.1039/C2CP41395G)
 * E. R. Johnson, A. Otero-de-la-Roza, J. Chem. Theory Comput. **8**,
-  5124 (2012). [link](http://dx.doi.org/10.1021/ct3006375)
+  5124 (2012). (http://dx.doi.org/10.1021/ct3006375)
 
 NCI for experimental densities:
 
 * G. Saleh, C. Gatti, L. Lo Presti, J. Contreras-Garcia,
   Chem. Eur. J. **18**, 15523 (2012). 
-  [link](http://dx.doi.org/10.1002/chem.201201290) 
+  (http://dx.doi.org/10.1002/chem.201201290) 
 
 Copyright notice
 ----------------
 
-Copyright (c) 2013 Alberto Otero de la Roza,
+Copyright (c) 2013-2015 Alberto Otero de la Roza,
 Julia Conteras-Garcia, Erin R. Johnson, and Weitao Yang
 
 nciplot is free software: you can redistribute it and/or modify
@@ -389,8 +372,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-See also
---------
-* [[NCI]]
 
