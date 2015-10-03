@@ -8,3 +8,7 @@ src/nciplot
 
 # emacs backups
 *~
+
+# examples directory
+nciplot_examples/
+
