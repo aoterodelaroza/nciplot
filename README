@@ -3,8 +3,8 @@ Overview
 
 NCIPLOT is a program that enables the computation and graphical
 visualization of inter- and intra-molecular non-covalent interactions
-(hydrogen bonds, π-π interactions, ...) in systems ranging from small
-dimers to large biomolecules.
+(hydrogen bonds, pi-pi interactions, ...) in systems ranging from
+small dimers to large biomolecules.
 
 NCI (Non-Covalent Interactions) is a visualization index based on
 the electron density ($\rho$) and the reduced density gradient (RDG, $s$),
