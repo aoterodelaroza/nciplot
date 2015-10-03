@@ -67,8 +67,11 @@ variable to the absolute path to NCIplot:
     export NCIPLOT_HOME=/home/xxxx/programs/nciplot
 
 so that the dat directory is ${NCIPLOT_HOME}/dat/. Several tests and
-examples are provided in the test-cases/ directory. The old PDF manual
-can be found in doc/.
+examples can be downloaded from:
+
+http://schooner.chem.dal.ca/downloads/nciplot/
+
+The old PDF manual (outdated) can be found in doc/.
 
 The code has been parallelized for shared-memory architectures using
 the OpenMP library. To use this feature, set the OMP_NUM_THREADS
