@@ -555,31 +555,39 @@ program nciplot
 
 110 format (A,F5.2)
 114 format ('#!/usr/local/bin/vmd',/,&
-     '# VMD script written by save_state $Revision: 1.10 $',/,&
-     '# VMD version: 1.8.6            ',/,&
-     'set viewplist            ',/,&
-     'set fixedlist            ',/,&
-     '# Display settings            ',/,&
-     'display projection   Orthographic            ',/,&
-     'display nearclip set 0.000000            ',/,&
-     '# load new molecule         ',/,&
+     '#',/,&
+     '# VMD script written by NCIPLOT',/,&
+     '#',/,&
+     '# If vmd is installed in /usr/local/bin/vmd',/,&
+     '# then this script can be run as an executable.',/,&
+     '#',/,&
+     '# Otherwise, run',/,&
+     '#  user:$ vmd -e file.vmd',/,&
+     '#',/,&
+     'set viewplist {}',/,&
+     'set fixedlist {}',/,&
+     '# Display settings',/,&
+     'display projection Orthographic',/,&
+     'display depthcue off',/,&
+     'display nearclip set 0.00',/,&
+     '# Load new molecule',/,&
      'mol new ',a,' type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all')
 115 format ('mol addfile ',a,' type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all')
 116 format ('#',/,&
-     '# representation of the atoms',/,&
+     '# Representation of the atoms',/,&
      'mol delrep 0 top',/,&
-     'mol representation Lines 1.00000',/,&
+     'mol representation Lines 1.00',/,&
      'mol color Name',/,&
      'mol selection {all}',/,&
      'mol material Opaque',/,&
      'mol addrep top',/,&
-     'mol representation CPK 1.000000 0.300000 118.000000 131.000000',/,&
+     'mol representation CPK 1.00 0.30 125.00 125.00',/,&
      'mol color Name',/,&
-     'mol selection {index ', i5, ' to ', i5, ' }',/,&
+     'mol selection {index ',i5, ' to ',i5,'}',/,&
      'mol material Opaque',/,&
      'mol addrep top',/,&
      '#',/,&
-     '# add representation of the surface',/,&
+     '# Add representation of the surface',/,&
      'mol representation Isosurface ',f7.5,' 1 0 0 1 1',/,&
      'mol color Volume 0',/,&
      'mol selection {all}',/,&
@@ -587,12 +595,11 @@ program nciplot
      'mol addrep top',/,&
      'mol selupdate ',i1,' top 0',/,&
      'mol colupdate ',i1,' top 0',/,&
-     'mol scaleminmax top ',i1,' ', f7.4, f7.4,/,&
-     'mol smoothrep top ', i1,' 0',/,&
+     'mol scaleminmax top ',i1,' ',f7.4,f7.4,/,&
+     'mol smoothrep top ',i1,' 0',/,&
      'mol drawframes top ',i1,' {now}',/,&
      'color scale method BGR',/,&
-     'set colorcmds {{color Name {C} gray}}',/,&
-     '#some more',/)
+     '#',/)
 120 format(/'-----------------------------------------------------'/&
             '      Calculation details:'/&
             '-----------------------------------------------------')
