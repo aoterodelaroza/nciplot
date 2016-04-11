@@ -384,8 +384,8 @@ program nciplot
      trim(oname)//"-dens.cube",&
      trim(oname)//"-elf.cube",&
      trim(oname)//"-xc.cube",&
-     trim(oname)//".vmd",&
      trim(oname)//".dat",&
+     trim(oname)//".vmd",&
      trim(oname)//".ncichk"
      
   ! write cube headers
