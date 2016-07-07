@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
+! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
