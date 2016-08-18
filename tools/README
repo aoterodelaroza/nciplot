@@ -1,0 +1,27 @@
+Brief descriptions of the analysis tools
+----------------------------------------
+
+----------
+cutden.awk
+----------
+A script to post-process dat files and discard data with signed densities
+less than a minimum or greater than a maximum value.
+
+  user:$ ./cutden.awk min max file.dat > new_file.dat
+
+-----------
+cutgrad.awk
+-----------
+A script to post-process dat files and discard data with reduced density
+gradients less than a minimum or greater than a maximum value.
+
+  user:$ ./cutgrad.awk min max file.dat > new_file.dat
+
+--------------
+SplitAttRep.py
+--------------
+A script to separate the attractive an repulsive parts of the 3D NCI surface
+stored in the filename-dens.cube and filename-grad.cube files.
+
+  user:$ python SplitAttRep.py filename
+
