@@ -27,7 +27,6 @@ module tools_io
   public :: upper
   public :: realloc
   public :: getword, isinteger, isreal
-  public :: read_integers, read_reals1
 
 contains
 
@@ -311,10 +310,8 @@ contains
     logical           matched, isdigit
     isdigit(ch) = ch.ge.'0' .and. ch.le.'9'
 
-    isreal = .false.
     do while (line(lp:lp) .eq. ' ')
        lp = lp + 1
-       if (lp > mline) return
     end do
 
     i = lp
@@ -522,64 +519,5 @@ contains
     atof=(sign*val/power)*ten**(esign*exponent)
     return
   end function atof
-
- function read_integers(lu,n) result(x)
-   use param
-   integer, intent(in) :: lu, n
-   integer :: x(n)
-
-   integer :: kk, lp, idum
-   character*(mline) :: line
-
-   kk = 0
-   lp = 1
-   read(lu,'(A)',end=999) line
-   do while(.true.)
-      if (.not.isinteger(idum,line,lp)) then
-         lp = 1
-         read(lu,'(A)',end=999) line
-         line = adjustl(line)
-         if (line(1:2) == "</") exit
-      else
-         kk = kk + 1
-         if (kk > n) call error("read_integers","exceeded size of the array",2)
-         x(kk) = idum
-      endif
-   enddo
-   
-   return
-999 call error("read_integers","unexpected end of file",2)
-
- endfunction read_integers
-
- function read_reals1(lu,n) result(x)
-   use param
-   integer, intent(in) :: lu, n
-   real*8 :: x(n)
-
-   integer :: kk, lp
-   real*8 :: rdum
-   character*(mline) :: line
-
-   kk = 0
-   lp = 1
-   read(lu,'(A)',end=999) line
-   do while(.true.)
-      if (.not.isreal(rdum,line,lp)) then
-         lp = 1
-         read(lu,'(A)',end=999) line
-         line = adjustl(line)
-         if (line(1:1) == "<") exit
-      else
-         kk = kk + 1
-         if (kk > n) call error("read_reals1","exceeded size of the array",2)
-         x(kk) = rdum
-      endif
-   enddo
-   
-   return
-999 call error("read_reals1","unexpected end of file",2)
-
- endfunction read_reals1
 
 end module tools_io
