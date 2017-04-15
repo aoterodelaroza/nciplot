@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -54,7 +54,7 @@ module reader
      integer :: nmo, npri
      integer, allocatable :: icenter(:)
      integer, allocatable :: itype(:)
-     integer :: ntyp(35), maxntyp
+     integer :: ntyp(56), maxntyp ! BGJ up to l=5 
      integer, allocatable :: intyp(:)
      real*8, allocatable :: e(:)
      real*8, allocatable :: occ(:)
@@ -69,7 +69,6 @@ contains
   function readfile(file) result(m)
     use param
     use tools_io
-    implicit none
     
     character*(mline), intent(in) :: file
     type(molecule) :: m
@@ -83,6 +82,8 @@ contains
        m = readxyz(file)
     case('WFN')
        m = readwfn(file)
+    case('WFX')
+       m = readwfx(file)
     case default
        call error('readfile','Not recognized molecular format',faterr)
     end select
@@ -93,7 +94,6 @@ contains
   function readxyz(file) result(m)
     use param
     use tools_io
-    implicit none
 
     character*(mline), intent(in) :: file
     type(molecule) :: m
@@ -148,7 +148,6 @@ contains
   function readwfn(file) result(m)
     use param
     use tools_io
-    implicit none
 
     character*(mline), intent(in) :: file
     type(molecule) :: m
@@ -210,10 +209,11 @@ contains
 
     ! order by primitive type
     imax = 0
-    do i = 1, 35
+    ! bgj primitives up to l=5 
+    do i = 1, 56
        imax = max(count(m%itype == i),imax)
-       ! BGJ maybe I want only d orbitals if (count(m%itype == i) == 0) exit
-       m%maxntyp = i
+       if (count(m%itype == i) > 0) &
+          m%maxntyp = i
     enddo
     allocate(m%intyp(m%npri))
     m%ntyp = 0
@@ -231,12 +231,138 @@ contains
 101 format (4X,A4,10X,3(I5,15X))
 102 format(20X,20I3)
 103 format(10X,5E14.7)
-104 format(35X,F12.8)
+104 format(35X,F12.8) 
 105 format(5(E16.8))
 106 format(24X,3(F12.8),10X,F5.1)
 
   end function readwfn
 
+  !> Read wfn file
+  function readwfx(file) result(m)
+    use param
+    use tools_io
+
+    character*(mline), intent(in) :: file
+    type(molecule) :: m
+
+    integer :: i, j, istat, ncore, kk, lp, idum
+    real*8 :: zreal
+    character*(mline) :: line, tag
+    logical :: keyw(7)
+    integer :: imax, icount, luwfn
+
+    ! set title
+    m%ifile = ifile_wfn
+    m%name = file
+
+    ! first pass
+    open (luwfn,file=file,status='old')
+    m%n = 0
+    m%nmo = 0
+    m%npri = 0
+    do while (.true.)
+       read(luwfn,'(A)',end=10) line
+       line = adjustl(line)
+       if (line(1:1) == "<" .and. line(2:2) /= "/") then
+          if (trim(line) == "<Number of Nuclei>") then
+             read (luwfn,*) m%n
+          elseif (trim(line) == "<Number of Occupied Molecular Orbitals>") then
+             read (luwfn,*) m%nmo
+          elseif (trim(line) == "<Number of Primitives>") then
+             read(luwfn,*) m%npri
+          endif
+       endif
+    enddo
+10  continue
+    
+    if (m%n == 0) call error("readwfx","Number of Nuclei tag not found",2)
+    if (m%nmo == 0) call error("readwfx","Number of Occupied Molecular Orbitals tag not found",2)
+    if (m%npri == 0) call error("readwfx","Number of Primitives tag not found",2)
+
+    ! allocate memory
+    allocate(m%x(3,m%n),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for atomic positions',2)
+    allocate(m%z(m%n),m%q(m%n),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for atomic numbers',2)
+    allocate(m%ifrag(m%n),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for ifrag',2)
+    allocate(m%icenter(m%npri),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for icenter',2)
+    allocate(m%itype(m%npri),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for itype',2)
+    allocate(m%e(m%npri),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for exponents',2)
+    allocate(m%occ(m%nmo),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for occupations',2)
+    allocate(m%c(m%nmo,m%npri),stat=istat)
+    if (istat /= 0) call error('readwfx','could not allocate memory for orbital coefficients',2)
+    
+    ! second pass
+    rewind(luwfn)
+    keyw = .false.
+    do while (.true.)
+       read(luwfn,'(A)',end=20) line
+       line = adjustl(line)
+       if (line(1:1) == "<" .and. line(2:2) /= "/") then
+          if (trim(line) == "<Atomic Numbers>") then
+             m%z = read_integers(luwfn,m%n)
+             m%q = 0
+             keyw(1) = .true.
+          elseif (trim(line) == "<Nuclear Cartesian Coordinates>") then
+             m%x = reshape(read_reals1(luwfn,3*m%n),shape(m%x))
+             keyw(2) = .true.
+          elseif (trim(line) == "<Primitive Centers>") then
+             m%icenter = read_integers(luwfn,m%npri)
+             keyw(3) = .true.
+          elseif (trim(line) == "<Primitive Types>") then
+             m%itype = read_integers(luwfn,m%npri)
+             if (any(m%itype(1:m%npri) > 56)) &
+                call error("readwfx","primitive type not supported",2)
+             keyw(4) = .true.
+          elseif (trim(line) == "<Primitive Exponents>") then
+             m%e = read_reals1(luwfn,m%npri)
+             keyw(5) = .true.
+          elseif (trim(line) == "<Molecular Orbital Occupation Numbers>") then
+             m%occ = read_reals1(luwfn,m%nmo)
+             keyw(6) = .true.
+          elseif (trim(line) == "<Molecular Orbital Primitive Coefficients>") then
+             read(luwfn,*)
+             do i = 1, m%nmo
+                read(luwfn,*)
+                read(luwfn,*)
+                m%c(i,:) = read_reals1(luwfn,m%npri)
+             enddo
+             keyw(7) = .true.
+          endif
+       endif
+    enddo
+20  continue
+    if (any(.not.keyw)) call error("readwfx","missing array in wfx file",2)
+    close(luwfn)
+
+    ! order by primitive type
+    imax = 0
+    ! BGJ up to l=5 
+    do i = 1, 56
+       imax = max(count(m%itype == i),imax)
+       if (count(m%itype == i) == 0) exit
+       m%maxntyp = i
+    enddo
+    allocate(m%intyp(m%npri))
+    m%ntyp = 0
+    icount = 0
+    do i = 1, m%maxntyp
+       do j = 1, m%npri
+          if (m%itype(j) == i) then
+             icount = icount + 1
+             m%ntyp(i) = m%ntyp(i) + 1
+             m%intyp(icount) = j
+          end if
+       enddo
+    enddo
+
+  end function readwfx
+  
   !> Read a density core file from the database. 
   subroutine readgrid(g,z)
     use tools_io

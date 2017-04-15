@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -15,11 +15,6 @@
 !
 ! You should have received a copy of the GNU General Public License
 ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-!This is NCI-3.0
-
-
 program nciplot
   use param
   use tools_io
@@ -303,7 +298,7 @@ program nciplot
         read (line,*) dedr
         edras(1) = dedr**(-2.0d0) ! exponent is 1/d^2 
         write(edrastring,127) dedr    
-        write(*,*) "EDR string ",trim(adjustl(edrastring))
+        write(uout,*) "EDR string ",trim(adjustl(edrastring))
      case ("EDRDMAX")
         doedr = .true.
         doedrdmax = .true.
@@ -311,11 +306,12 @@ program nciplot
         edrastring='';
         read (line,*) edrainc, edrastart, nedr 
         if(nedr<1) call error('nciplot','bad num EDR exponents',faterr)
-        write(*,*) 'EDR exponents: ' 
+        if(edrainc<1.01d0) call error('nciplot','bad increment EDR exponents',faterr)
+        write(uout,*) 'EDR exponents: ' 
         do i=1,nedr
            edras(i) = edrastart
            edrastart = edrastart / edrainc
-           write(*,*) edras(i) , edras(i)**(-0.5d0)
+           write(uout,*) edras(i) , edras(i)**(-0.5d0)
         end do 
      case ("EXC")
         ! exchange
@@ -440,10 +436,12 @@ program nciplot
   if (doedrdmax) call write_cube_header(luedrdmax,'edrdmax_cube','3d plot, EDR D(r) ')
   if (all(ixc /= 0)) call write_cube_header(luxc,'xc_cube','3d plot, xc energy density')
 
-  write(*,*) 'Done writing cube headers' 
-  write(*,*) 'DoEDR     is ',doedr
-  write(*,*) 'WriteEDR  is ',writeedr
-  write(*,*) 'DoEDRDmax is ',doedrdmax
+  if (writeedr .or. doedrdmax) then
+     write(uout,*) 'Done writing cube headers' 
+     write(uout,*) 'DoEDR     is ',doedr
+     write(uout,*) 'WriteEDR  is ',writeedr
+     write(uout,*) 'DoEDRDmax is ',doedrdmax
+  end if
 
   ! allocate memory for density and gradient
   allocate(crho(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
@@ -493,10 +491,10 @@ program nciplot
      close(luchk)
   else
      if (ispromol) then
+        if(doedr) &
+           call error('nciplot','cannot do EDR from promolecule',faterr) 
         !$omp parallel do private (x,rho,grad,hess,heigs,hvecs,wk1,wk2,istat,grad2,&
         !$omp dimgrad,intra,rhom,elf,exc) schedule(dynamic)
-        if(doedr) call error('nciplot',&
-          'cannot do EDR from promolecule',faterr) 
         do k = 0, nstep(3)-1
            do j = 0, nstep(2)-1
               do i = 0, nstep(1)-1
@@ -529,7 +527,6 @@ program nciplot
           doedrdmax,cedrdmax,nedr,edras,ixc,cxc)
         if (inter) then
            !$omp parallel do private (x,rho,grad,hess,intra,rhom,elf,exc) schedule(dynamic)
-           if(doedr) call error('nciplot','cannot do EDR from promolecule',faterr) 
            do k = 0, nstep(3)-1
               do j = 0, nstep(2)-1
                  do i = 0, nstep(1)-1
@@ -626,31 +623,39 @@ program nciplot
 
 110 format (A,F5.2)
 114 format ('#!/usr/local/bin/vmd',/,&
-     '# VMD script written by save_state $Revision: 1.10 $',/,&
-     '# VMD version: 1.8.6            ',/,&
-     'set viewplist            ',/,&
-     'set fixedlist            ',/,&
-     '# Display settings            ',/,&
-     'display projection   Orthographic            ',/,&
-     'display nearclip set 0.000000            ',/,&
-     '# load new molecule         ',/,&
+     '#',/,&
+     '# VMD script written by NCIPLOT',/,&
+     '#',/,&
+     '# If vmd is installed in /usr/local/bin/vmd',/,&
+     '# then this script can be run as an executable.',/,&
+     '#',/,&
+     '# Otherwise, run',/,&
+     '#  user:$ vmd -e file.vmd',/,&
+     '#',/,&
+     'set viewplist {}',/,&
+     'set fixedlist {}',/,&
+     '# Display settings',/,&
+     'display projection Orthographic',/,&
+     'display depthcue off',/,&
+     'display nearclip set 0.00',/,&
+     '# Load new molecule',/,&
      'mol new ',a,' type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all')
 115 format ('mol addfile ',a,' type cube first 0 last -1 step 1 filebonds 1 autobonds 1 waitfor all')
 116 format ('#',/,&
-     '# representation of the atoms',/,&
+     '# Representation of the atoms',/,&
      'mol delrep 0 top',/,&
-     'mol representation Lines 1.00000',/,&
+     'mol representation Lines 1.00',/,&
      'mol color Name',/,&
      'mol selection {all}',/,&
      'mol material Opaque',/,&
      'mol addrep top',/,&
-     'mol representation CPK 1.000000 0.300000 118.000000 131.000000',/,&
+     'mol representation CPK 1.00 0.30 125.00 125.00',/,&
      'mol color Name',/,&
-     'mol selection {index ', i5, ' to ', i5, ' }',/,&
+     'mol selection {index ',i5, ' to ',i5,'}',/,&
      'mol material Opaque',/,&
      'mol addrep top',/,&
      '#',/,&
-     '# add representation of the surface',/,&
+     '# Add representation of the surface',/,&
      'mol representation Isosurface ',f7.5,' 1 0 0 1 1',/,&
      'mol color Volume 0',/,&
      'mol selection {all}',/,&
@@ -658,12 +663,11 @@ program nciplot
      'mol addrep top',/,&
      'mol selupdate ',i1,' top 0',/,&
      'mol colupdate ',i1,' top 0',/,&
-     'mol scaleminmax top ',i1,' ', f7.4, f7.4,/,&
-     'mol smoothrep top ', i1,' 0',/,&
+     'mol scaleminmax top ',i1,' ',f7.4,f7.4,/,&
+     'mol smoothrep top ',i1,' 0',/,&
      'mol drawframes top ',i1,' {now}',/,&
      'color scale method BGR',/,&
-     'set colorcmds {{color Name {C} gray}}',/,&
-     '#some more',/)
+     '#',/)
 120 format(/'-----------------------------------------------------'/&
             '      Calculation details:'/&
             '-----------------------------------------------------')

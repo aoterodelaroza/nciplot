@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -79,14 +79,14 @@ contains
           edrdmax = 0d0
        else 
           edr = 0d0 
-          endif 
+       endif
        if(nedr<1.or.nedr>max_edr_exponents) call &
           error('calcprops','nedr out of range',faterr)
        do i=1,nedr
-         if(edras(i).lt.1d-6.or.edras(i).gt.1d+9) call &
-           error('calcprops','out of range exponent in edr',faterr)
-         end do 
-       end if 
+          if(edras(i).lt.1d-6.or.edras(i).gt.1d+9) call &
+             error('calcprops','out of range exponent in edr',faterr)
+       end do
+    end if
     doxc = any(ixc /= 0)
     if (doxc) xc = 0d0
 
@@ -104,29 +104,16 @@ contains
     if(doedr) then 
        allocate(edraux(n(1),nedr),stat=istat)
        if (istat /= 0) call error('calcprops','error allocating edraux',faterr)
-       endif 
+    endif
     allocate(gg(n(1),3),stat=istat)
     if (istat /= 0) call error('calcprops','error allocating gg',faterr)
-
-    ! TEST 
-    write(*,*) 'OCCUPANCIES' 
-    do imo = 1, mol(1)%nmo
-       write(*,*) mol(1)%occ(imo)
-       end do 
-    write(*,*) 'COEFFICIENTS' 
-    do imo = 1, mol(1)%nmo
-       do ipri = 1, mol(1)%npri
-          write(*,*) imo, ipri, mol(1)%c(imo,ipri)
-          end do 
-        end do 
-    write(*,*) 'MAXTYP', mol(1)%maxntyp
     
     ! run over y and z
-    !$omp parallel do private (ip,jp,kp,hess,tp,gg,chi,phi,maxc,ldopri,dx,dy,dz,d2,&
-    !$omp nn,ipri,iat,al,ex,x0,l,xl,xl2,grad2,rho53,ebose,df,heigs,hvecs,wk1,wk2,&
-    !$omp amu,phiamu,edraux,xamu,ldopriamu,
-    !$omp istat,rhoaux,eelf,eexc) schedule(dynamic)
-    do j = 0, n(2)-1
+    !$omp parallel do private (ip,jp,kp,nn,ipri,iat,al,ex,x0,l,xl,xl2,grad2,rho53,&
+    !$omp ebose,df,heigs,hvecs,wk1,wk2,xamu,istat,eelf,eexc) &
+    !$omp firstprivate(dx,dy,dz,d2,gg,tp,maxc,rhoaux,chi,phi,hess,amu,phiamu,edraux,&
+    !$omp ldopri,ldopriamu) schedule(dynamic)
+     do j = 0, n(2)-1
        jp = j + 1
        do k = 0, n(3)-1
           kp = k + 1
@@ -176,11 +163,11 @@ contains
                       ex = exp(-al * d2(ip,iat))
 
                       if(doedr) then 
-                        do iedr=1,nedr
-                          amu0(iedr) =(2d0*edras(iedr)/pi)**(3d0/4d0) *(pi/(al+edras(iedr)))**(3d0/2d0)&
-                             * exp(-al*edras(iedr)/(al+edras(iedr)) * d2(ip,iat))
-                          end do 
-                        end if 
+                         do iedr=1,nedr
+                            amu0(iedr) =(2d0*edras(iedr)/pi)**(3d0/4d0) *(pi/(al+edras(iedr)))**(3d0/2d0)&
+                               * exp(-al*edras(iedr)/(al+edras(iedr)) * d2(ip,iat))
+                         end do
+                      end if
 
                       x0 = (/ dx(ip,iat), dy(ip,iat), dz(ip,iat) /)
 
@@ -191,51 +178,65 @@ contains
                             xl(ix,1) = 0d0
                             xl(ix,2) = 0d0
                             if(doedr) then 
-                              do iedr = 1,nedr
-                                 xamu(ix,iedr) = 1d0
-                                 end do 
-                              endif 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = 1d0
+                               end do
+                            endif
                          else if (l(ix) == 1) then
                             xl(ix,0) = x0(ix)
                             xl(ix,1) = 1d0
                             xl(ix,2) = 0d0
                             if(doedr) then 
-                              do iedr = 1,nedr
-                                 xamu(ix,iedr) = x0(ix)*edras(iedr)/(edras(iedr)+al)
-                                 end do 
-                              endif 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = x0(ix)*edras(iedr)/(edras(iedr)+al)
+                               end do
+                            endif
                          else if (l(ix) == 2) then
                             xl(ix,0) = x0(ix) * x0(ix)
                             xl(ix,1) = 2d0 * x0(ix)
                             xl(ix,2) = 2d0
                             if(doedr) then 
-                              do iedr = 1,nedr
-                                 xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**2d0 &
-                                  + 1d0/(2d0*(edras(iedr)+al))
-                                 end do 
-                              endif 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**2d0 &
+                                     + 1d0/(2d0*(edras(iedr)+al))
+                               end do
+                            endif 
                          else if (l(ix) == 3) then
                             xl(ix,0) = x0(ix) * x0(ix) * x0(ix)
                             xl(ix,1) = 3d0 * x0(ix) * x0(ix)
                             xl(ix,2) = 6d0 * x0(ix)
                             if(doedr) then 
-                              do iedr = 1,nedr
-                                xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**3d0 &
-                                + x0(ix)*3d0*edras(iedr)/(2d0*(edras(iedr)+al)**2d0)
-                                 end do 
-                              endif 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**3d0 &
+                                     + x0(ix)*3d0*edras(iedr)/(2d0*(edras(iedr)+al)**2d0)
+                               end do
+                            endif
                          else if (l(ix) == 4) then
                             xl2 = x0(ix) * x0(ix)
                             xl(ix,0) = xl2 * xl2
                             xl(ix,1) = 4d0 * xl2 * x0(ix)
                             xl(ix,2) = 12d0 * xl2
                             if(doedr) then 
-                              do iedr = 1,nedr
-                                xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**4d0 &
-                                + x0(ix)**2d0 *3d0*edras(iedr)**2d0/(edras(iedr)+al)**3d0 &
-                                + 3d0/(4d0*(edras(iedr)+al)**2d0)
-                                 end do 
-                              endif 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = &
+                                       x0(ix)**4d0*    (edras(iedr)/(edras(iedr)+al))**4d0 &
+                                     + x0(ix)**2d0 *3d0*edras(iedr)**2d0/(edras(iedr)+al)**3d0 &
+                                     +              3d0/(4d0*(edras(iedr)+al)**2d0)
+                               end do
+                            endif
+                         else if (l(ix) == 5) then
+                            xl2 = x0(ix) * x0(ix)
+                            xl(ix,0) = xl2 * xl2 * x0(ix)
+                            xl(ix,1) = 5d0 * xl2 * xl2
+                            xl(ix,2) = 20d0 * xl2 * x0(ix)
+                            if(doedr) then 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = &
+                                       x0(ix)**5d0*     edras(iedr)**5d0/(edras(iedr)+al)**5d0 &
+                                     + x0(ix)**3d0* 5d0*edras(iedr)**3d0/(edras(iedr)+al)**4d0 &
+                                     + x0(ix)     *15d0*edras(iedr)/(4d0*(edras(iedr)+al)**3d0)
+                               end do
+                            endif
                          else
                             call error('pri012','power of L not supported',faterr)
                          end if
@@ -257,22 +258,22 @@ contains
                          (xl(3,1)-2*al*x0(3)**(l(3)+1))*xl(2,0)*ex
                       chi(ipri,10)= (xl(3,1)-2*al*x0(3)**(l(3)+1))*&
                          (xl(2,1)-2*al*x0(2)**(l(2)+1))*xl(1,0)*ex
- 
+
                       if(doedr) then 
-                        do iedr=1,nedr
-                          amu(ipri,iedr) =  xamu(1,iedr)*xamu(2,iedr)*xamu(3,iedr)*amu0(iedr)
-                          end do 
-                        endif 
+                         do iedr=1,nedr
+                            amu(ipri,iedr) =  xamu(1,iedr)*xamu(2,iedr)*xamu(3,iedr)*amu0(iedr)
+                         end do
+                      endif
 
                       do ix = 1, 10
                          ldopri(ipri,ix) = (abs(chi(ipri,ix))*maxc(ipri) > cutoff_pri)
                       enddo
 
                       if(doedr) then 
-                        do iedr=1,nedr
-                          ldopriamu(ipri,iedr) = (abs(amu(ipri,iedr))*maxc(ipri) > cutoff_pri)
-                          end do 
-                        endif 
+                         do iedr=1,nedr
+                            ldopriamu(ipri,iedr) = (abs(amu(ipri,iedr))*maxc(ipri) > cutoff_pri)
+                         end do
+                      endif
                    enddo ! ipria = nn+1, nn+ntyp
 
                    nn = nn + mol(m)%ntyp(ityp)
@@ -288,21 +289,21 @@ contains
                       enddo
                    enddo
                 enddo
-
+                
                 ! Build EDR primitives at the point 
                 if(doedr) then 
                    phiamu = 0d0
                    do iedr=1,nedr
-                     do ipri = 1, mol(m)%npri
-                       if (.not.ldopriamu(ipri,iedr)) cycle
-                       do imo = 1, mol(m)%nmo
-                         phiamu(imo,iedr) = phiamu(imo,iedr) + &
-                           mol(m)%c(imo,ipri)*amu(ipri,iedr)
+                      do ipri = 1, mol(m)%npri
+                         if (.not.ldopriamu(ipri,iedr)) cycle
+                         do imo = 1, mol(m)%nmo
+                            phiamu(imo,iedr) = phiamu(imo,iedr) + &
+                               mol(m)%c(imo,ipri)*amu(ipri,iedr)
                          enddo
-                       enddo
-                     enddo
-                  end if 
-                
+                      enddo
+                   enddo
+                end if
+
                 ! contribution to the density, etc.
                 do imo = 1, mol(m)%nmo
                    rhoaux(ip) = rhoaux(ip) + mol(m)%occ(imo) * phi(imo,1) * phi(imo,1)
@@ -317,15 +318,15 @@ contains
                    hess(ip,2,3) = hess(ip,2,3) + 2 * mol(m)%occ(imo) * (phi(imo,1)*phi(imo,10)+phi(imo,3)*phi(imo,4))
                    tp(ip) = tp(ip) + mol(m)%occ(imo) * (phi(imo,2)*phi(imo,2)+phi(imo,3)*phi(imo,3)+phi(imo,4)*phi(imo,4))
                    if(doedr) then 
-                       do iedr=1,nedr
+                      do iedr=1,nedr
                          edraux(ip,iedr) = edraux(ip,iedr) + mol(m)%occ(imo) * phi(imo,1) * phiamu(imo,iedr)
-                         end do 
-                       endif 
+                      end do
+                   endif
                 enddo
              enddo ! i = 0, n-1
 
              deallocate(chi,phi,maxc,ldopri)
-             if(doedr)deallocate(amu,phiamu,ldopriamu)
+             if(doedr) deallocate(amu,phiamu,ldopriamu)
 
           enddo ! m = 1, nmol
 
@@ -336,8 +337,8 @@ contains
              if(doedr) then 
                 do iedr=1,nedr
                    edraux(ip,iedr) = max(edraux(ip,iedr),1d-30)
-                   end do 
-                endif
+                end do
+             endif
              grad2 = gg(ip,1)**2 + gg(ip,2)**2 + gg(ip,3)**2
 
              ! tau and elf
@@ -361,20 +362,19 @@ contains
              call rs(3,3,hess(ip,:,:),heigs,0,hvecs,wk1,wk2,istat)
 
              !$omp critical (writeshared)
-             ! TEST BGJ rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
+             ! BGJ test rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
              rho(ip,jp,kp) = rhoaux(ip)
              grad(ip,jp,kp) = sqrt(grad2) / (const * rhoaux(ip)**fothirds)
              if (doelf) elf(ip,jp,kp) = eelf
              if (doxc) xc(ip,jp,kp) = eexc
              if (doedr) then
                 if(doedrdmax) then
-                  call three_point_interpolation(nedr,edras,edraux(ip,:),&
-                     dmax,edrmax)
-                  edrdmax(ip,jp,kp) = dmax
+                   call three_point_interpolation(nedr,edras,edraux(ip,:),dmax,edrmax)
+                   edrdmax(ip,jp,kp) = dmax
                 else
-                  edr(ip,jp,kp) = edraux(ip,1)/rhoaux(ip)**0.5d0
-                  endif
+                   edr(ip,jp,kp) = edraux(ip,1)/rhoaux(ip)**0.5d0
                 endif
+             endif
              !$omp end critical (writeshared)
           enddo
        enddo ! k = 0, n(3)-1
@@ -382,8 +382,8 @@ contains
     !$omp end parallel do
 
     deallocate(dx,dy,dz,d2,hess,tp,gg)
-    deallocate(rhoaux,edraux)
-    ! One should deallocate rhoaux at some point, right? 
+    deallocate(rhoaux)
+    if (allocated(edraux)) deallocate(edraux)
 
   end subroutine calcprops_wfn
 
@@ -725,13 +725,19 @@ contains
      integer, intent(in) :: i
      integer, intent(out) :: l(3)
 
-     integer, parameter :: LI(3,35) = reshape((/&
-        0,0,0, 1,0,0, 0,1,0, 0,0,1, 2,0,0, 0,2,0, 0,0,2, 1,1,0, 1,0,1, 0,1,1,&
-        3,0,0, 0,3,0, 0,0,3, 2,1,0, 2,0,1, 0,2,1, 1,2,0, 1,0,2, 0,1,2, 1,1,1,& ! f primitives
-        0,0,4, 0,1,3, 0,2,2, 0,3,1, 0,4,0, 1,0,3, 1,1,2, 1,2,1, 1,3,0, 2,0,2,& ! g primitives
-        2,1,1, 2,2,0, 3,0,1, 3,1,0, 4,0,0/),shape(li))
+    integer, parameter :: li(3,56) = reshape((/&
+      0,0,0, & ! s
+      1,0,0, 0,1,0, 0,0,1, & ! p
+      2,0,0, 0,2,0, 0,0,2, 1,1,0, 1,0,1, 0,1,1, & !d
+      3,0,0, 0,3,0, 0,0,3, 2,1,0, 2,0,1, 0,2,1, &
+      1,2,0, 1,0,2, 0,1,2, 1,1,1,& ! f
+      4,0,0, 0,4,0, 0,0,4, 3,1,0, 3,0,1, 1,3,0, 0,3,1, 1,0,3,&
+      0,1,3, 2,2,0, 2,0,2, 0,2,2, 2,1,1, 1,2,1, 1,1,2,& ! g
+      0,0,5, 0,1,4, 0,2,3, 0,3,2, 0,4,1, 0,5,0, 1,0,4, 1,1,3,&
+      1,2,2, 1,3,1, 1,4,0, 2,0,3, 2,1,2, 2,2,1, 2,3,0, 3,0,2,&
+      3,1,1, 3,2,0, 4,0,1, 4,1,0, 5,0,0/),shape(li)) ! h
 
-     if (i < 1 .or. i > 35) call error('index0','type not allowed',faterr)
+     if (i < 1 .or. i > 56) call error('index0','type not allowed',faterr)
      l = li(:,i)
 
    end subroutine index0
@@ -1124,7 +1130,7 @@ contains
     ec = c8811 + c8822 + c8812
 
   end subroutine b88_corr
- 
+
   subroutine three_point_interpolation(n,x,y,xmax,ymax)
     use reader
     use tools_io
@@ -1173,6 +1179,5 @@ contains
     !write(*,*) '  ' 
 
   end subroutine three_point_interpolation 
-     
 
 end module props
