@@ -23,6 +23,7 @@ module param
 
   ! program limits
   integer, parameter :: atomic_zmax = 18
+  integer, parameter :: max_edr_exponents = 50
 
   ! paths
   character*(mline) :: nciplot_home

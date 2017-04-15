@@ -211,8 +211,8 @@ contains
     imax = 0
     do i = 1, 35
        imax = max(count(m%itype == i),imax)
-       if (count(m%itype == i) == 0) exit
-       m%maxntyp = i
+       if (count(m%itype == i) > 0) &
+          m%maxntyp = i
     enddo
     allocate(m%intyp(m%npri))
     m%ntyp = 0
