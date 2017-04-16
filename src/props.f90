@@ -120,9 +120,9 @@ contains
           ! zero in-line hessian and tp
           hess = 0d0
           rhoaux = 0d0
-          edraux = 0d0
           tp = 0d0
           gg = 0d0
+          if (doedr) edraux = 0d0
 
           ! run over molecules
           do m = 1, nmol
