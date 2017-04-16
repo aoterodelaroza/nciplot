@@ -1142,17 +1142,17 @@ contains
     ymax = -1.0d0
     imax = -1 
     do i=1,n
-      if(y(i) .gt. ymax) then 
-         ymax = y(i)
-         imax = i
-         endif 
-      end do 
+       if(y(i) .gt. ymax) then 
+          ymax = y(i)
+          imax = i
+       endif
+    end do
     if(imax<1 .or. imax>n) call &
        error('three_point_interpolation','bad imax',faterr)
     if(imax .eq. 1 .or. imax.eq.n) then
        xmax = x(imax)**(-0.5d0)
        return 
-       endif
+    endif
 
     x1 = x(imax-1)**(-0.5d0)
     x2 = x(imax  )**(-0.5d0)
