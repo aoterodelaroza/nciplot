@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -54,7 +54,7 @@ module reader
      integer :: nmo, npri
      integer, allocatable :: icenter(:)
      integer, allocatable :: itype(:)
-     integer :: ntyp(35), maxntyp
+     integer :: ntyp(56), maxntyp ! BGJ up to l=5 
      integer, allocatable :: intyp(:)
      real*8, allocatable :: e(:)
      real*8, allocatable :: occ(:)
@@ -209,7 +209,8 @@ contains
 
     ! order by primitive type
     imax = 0
-    do i = 1, 35
+    ! bgj primitives up to l=5 
+    do i = 1, 56
        imax = max(count(m%itype == i),imax)
        if (count(m%itype == i) > 0) &
           m%maxntyp = i
@@ -230,7 +231,7 @@ contains
 101 format (4X,A4,10X,3(I5,15X))
 102 format(20X,20I3)
 103 format(10X,5E14.7)
-104 format(35X,F12.8)
+104 format(35X,F12.8) 
 105 format(5(E16.8))
 106 format(24X,3(F12.8),10X,F5.1)
 
@@ -341,7 +342,8 @@ contains
 
     ! order by primitive type
     imax = 0
-    do i = 1, 35
+    ! BGJ up to l=5 
+    do i = 1, 56
        imax = max(count(m%itype == i),imax)
        if (count(m%itype == i) == 0) exit
        m%maxntyp = i

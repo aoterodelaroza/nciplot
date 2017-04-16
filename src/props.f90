@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -218,9 +218,10 @@ contains
                             xl(ix,2) = 12d0 * xl2
                             if(doedr) then 
                                do iedr = 1,nedr
-                                  xamu(ix,iedr) = (x0(ix)*edras(iedr)/(edras(iedr)+al))**4d0 &
+                                  xamu(ix,iedr) = &
+                                       x0(ix)**4d0*    (edras(iedr)/(edras(iedr)+al))**4d0 &
                                      + x0(ix)**2d0 *3d0*edras(iedr)**2d0/(edras(iedr)+al)**3d0 &
-                                     + 3d0/(4d0*(edras(iedr)+al)**2d0)
+                                     +              3d0/(4d0*(edras(iedr)+al)**2d0)
                                end do
                             endif
                          else if (l(ix) == 5) then
@@ -228,6 +229,14 @@ contains
                             xl(ix,0) = xl2 * xl2 * x0(ix)
                             xl(ix,1) = 5d0 * xl2 * xl2
                             xl(ix,2) = 20d0 * xl2 * x0(ix)
+                            if(doedr) then 
+                               do iedr = 1,nedr
+                                  xamu(ix,iedr) = &
+                                       x0(ix)**5d0*     edras(iedr)**5d0/(edras(iedr)+al)**5d0 &
+                                     + x0(ix)**3d0* 5d0*edras(iedr)**3d0/(edras(iedr)+al)**4d0 &
+                                     + x0(ix)     *15d0*edras(iedr)/(4d0*(edras(iedr)+al)**3d0)
+                               end do
+                            endif
                          else
                             call error('pri012','power of L not supported',faterr)
                          end if
@@ -353,7 +362,8 @@ contains
              call rs(3,3,hess(ip,:,:),heigs,0,hvecs,wk1,wk2,istat)
 
              !$omp critical (writeshared)
-             rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
+             ! BGJ test rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
+             rho(ip,jp,kp) = rhoaux(ip)
              grad(ip,jp,kp) = sqrt(grad2) / (const * rhoaux(ip)**fothirds)
              if (doelf) elf(ip,jp,kp) = eelf
              if (doxc) xc(ip,jp,kp) = eexc
@@ -727,7 +737,7 @@ contains
       1,2,2, 1,3,1, 1,4,0, 2,0,3, 2,1,2, 2,2,1, 2,3,0, 3,0,2,&
       3,1,1, 3,2,0, 4,0,1, 4,1,0, 5,0,0/),shape(li)) ! h
 
-     if (i < 1 .or. i > 35) call error('index0','type not allowed',faterr)
+     if (i < 1 .or. i > 56) call error('index0','type not allowed',faterr)
      l = li(:,i)
 
    end subroutine index0

@@ -1,6 +1,6 @@
-! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@gmail.com>,
+! Copyright (c) 2013 Alberto Otero de la Roza <aoterodelaroza@ucmerced.edu>,
 ! Julia Conteras-Garcia <julia.contreras.garcia@gmail.com>, 
-! Erin R. Johnson <erin.johnson@dal.ca>, and Weitao Yang
+! Erin R. Johnson <ejohnson29@ucmerced.edu>, and Weitao Yang
 ! <weitao.yang@duke.edu>
 !
 ! nciplot is free software: you can redistribute it and/or modify
@@ -306,6 +306,7 @@ program nciplot
         edrastring='';
         read (line,*) edrainc, edrastart, nedr 
         if(nedr<1) call error('nciplot','bad num EDR exponents',faterr)
+        if(edrainc<1.01d0) call error('nciplot','bad increment EDR exponents',faterr)
         write(uout,*) 'EDR exponents: ' 
         do i=1,nedr
            edras(i) = edrastart
@@ -423,8 +424,8 @@ program nciplot
      trim(oname)//"-edr-"//trim(adjustl(edrastring))//".cube",&
      trim(oname)//"-D.cube",&
      trim(oname)//"-xc.cube",&
-     trim(oname)//".dat",&
      trim(oname)//".vmd",&
+     trim(oname)//".dat",&
      trim(oname)//".ncichk"
      
   ! write cube headers
