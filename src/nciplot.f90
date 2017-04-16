@@ -31,13 +31,16 @@ program nciplot
   character*(mline) :: filein, line, oline, word, wx, wc
   logical :: ok, ispromol
   real*8 :: rdum
+  real*8 :: edras(max_edr_exponents), edrastart, edrainc , dedr
+  integer :: nedr
+  character*(mline) :: edrastring
   ! the molecular info
   type(molecule), allocatable :: m(:)
   ! logical units
-  integer :: lugc, ludc, luvmd, ludat, luelf, luxc, luchk
+  integer :: lugc, ludc, luvmd, ludat, luelf, luedr, luedrdmax, luxc, luchk
   logical :: lchk
   ! cubes
-  real*8, allocatable, dimension(:,:,:) :: crho, cgrad, celf, cxc
+  real*8, allocatable, dimension(:,:,:) :: crho, cgrad, celf, cedr, cedrdmax, cxc
   ! ligand, intermolecular keywords
   logical :: ligand, inter, intra
   real*8 :: rthres
@@ -55,20 +58,22 @@ program nciplot
   ! discarding rho parameter
   real*8 :: rhoparam, rhoparam2
   ! properties of rho
-  real*8 :: rho, grad(3), dimgrad, grad2, hess(3,3), elf, exc
+  real*8 :: rho, grad(3), dimgrad, grad2, hess(3,3), elf, edr, exc
   integer, parameter :: mfrag = 100
   real*8 :: rhom(mfrag)
   ! eispack
   real*8 :: wk1(3), wk2(3), heigs(3), hvecs(3,3)
   ! elf
   logical :: doelf
+  ! edr
+  logical :: doedr, writeedr, doedrdmax 
   ! xc
   integer :: ixc(2)
   ! fragments
   integer :: nfrag
   logical :: autofrag
   ! chk file
-  logical :: alcrho, alcgrad, alcelf, alcxc
+  logical :: alcrho, alcgrad, alcelf, alcedr, alcedrdmax, alcxc
   real*8 :: xinit0(3), xinc0(3)
   integer :: nstep0(3)
 
@@ -155,6 +160,9 @@ program nciplot
   inter = .false.
   rthres = 2.d0
   doelf = .false.
+  doedr = .false.
+  writeedr = .false.
+  doedrdmax = .false.
   ixc = 0
   ! read the rest of (optional) keywords
   xinit = m(1)%x(:,1)
@@ -283,6 +291,27 @@ program nciplot
         read(line,*) rhoparam, rhoparam2
      case ("ELF")
         doelf = .true.
+     case ("EDR")
+        doedr = .true.
+        writeedr = .true.
+        nedr = 1 
+        read (line,*) dedr
+        edras(1) = dedr**(-2.0d0) ! exponent is 1/d^2 
+        write(edrastring,127) dedr    
+        write(uout,*) "EDR string ",trim(adjustl(edrastring))
+     case ("EDRDMAX")
+        doedr = .true.
+        doedrdmax = .true.
+        writeedr = .false. 
+        edrastring='';
+        read (line,*) edrainc, edrastart, nedr 
+        if(nedr<1) call error('nciplot','bad num EDR exponents',faterr)
+        write(uout,*) 'EDR exponents: ' 
+        do i=1,nedr
+           edras(i) = edrastart
+           edrastart = edrastart / edrainc
+           write(uout,*) edras(i) , edras(i)**(-0.5d0)
+        end do 
      case ("EXC")
         ! exchange
         read (line,*) wx, wc
@@ -358,6 +387,14 @@ program nciplot
      luelf = 9
      open(luelf,file=trim(oname)//"-elf.cube")
   end if
+  if (writeedr) then
+     luedr = 20
+     open(luedr,file=trim(oname)//"-edr-"//trim(adjustl(edrastring))//".cube")
+  end if
+  if (doedrdmax) then
+     luedrdmax = 21
+     open(luedrdmax,file=trim(oname)//"-D.cube")
+  end if
   if (all(ixc /= 0)) then
      luxc = 8
      open(luxc,file=trim(oname)//"-xc.cube")
@@ -383,6 +420,8 @@ program nciplot
   write(uout,122) trim(oname)//"-grad.cube",&
      trim(oname)//"-dens.cube",&
      trim(oname)//"-elf.cube",&
+     trim(oname)//"-edr-"//trim(adjustl(edrastring))//".cube",&
+     trim(oname)//"-D.cube",&
      trim(oname)//"-xc.cube",&
      trim(oname)//".dat",&
      trim(oname)//".vmd",&
@@ -392,7 +431,16 @@ program nciplot
   if (lugc > 0) call write_cube_header(lugc,'grad_cube','3d plot, reduced density gradient')
   if (ludc > 0) call write_cube_header(ludc,'dens_cube','3d plot, density')
   if (doelf) call write_cube_header(luelf,'elf_cube','3d plot, electron localisation function')
+  if (writeedr) call write_cube_header(luedr,'edr_cube','3d plot, electron delocalization range')
+  if (doedrdmax) call write_cube_header(luedrdmax,'edrdmax_cube','3d plot, EDR D(r) ')
   if (all(ixc /= 0)) call write_cube_header(luxc,'xc_cube','3d plot, xc energy density')
+
+  if (writeedr .or. doedrdmax) then
+     write(uout,*) 'Done writing cube headers' 
+     write(uout,*) 'DoEDR     is ',doedr
+     write(uout,*) 'WriteEDR  is ',writeedr
+     write(uout,*) 'DoEDRDmax is ',doedrdmax
+  end if
 
   ! allocate memory for density and gradient
   allocate(crho(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
@@ -402,6 +450,14 @@ program nciplot
   if (doelf) then
      allocate(celf(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
      if (istat /= 0) call error('nciplot','could not allocate memory for elf',faterr)
+  end if
+  if (writeedr) then
+     allocate(cedr(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
+     if (istat /= 0) call error('nciplot','could not allocate memory for edr',faterr)
+  end if
+  if (doedrdmax) then
+     allocate(cedrdmax(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
+     if (istat /= 0) call error('nciplot','could not allocate memory for edr',faterr)
   end if
   if (all(ixc /= 0)) then
      allocate(cxc(0:nstep(1)-1,0:nstep(2)-1,0:nstep(3)-1),stat=istat)
@@ -417,6 +473,7 @@ program nciplot
      read (luchk) xinit0, xinc0, nstep0
      if ((alcrho.neqv.allocated(crho)) .or. (alcgrad.neqv.allocated(cgrad)) .or.&
          (alcelf.neqv.allocated(celf)) .or. (alcxc.neqv.allocated(cxc)) .or.&
+         (alcedr.neqv.allocated(cedr)) .or. (alcedrdmax.neqv.allocated(cedrdmax)) .or.&
          any(abs(xinit0 - xinit) > 1d-12) .or. any(abs(xinc0 - xinc) > 1d-12) .or.&
          any((nstep - nstep0) /= 0)) then
         lchk = .false.
@@ -427,10 +484,14 @@ program nciplot
      write(uout,'(" Reading the checkpoint file: ",A/)') trim(oname)//".ncichk"
      read (luchk) crho, cgrad
      if (allocated(celf)) read (luchk) celf
+     if (allocated(cedr)) read (luchk) cedr
+     if (allocated(cedrdmax)) read (luchk) cedrdmax
      if (allocated(cxc)) read (luchk) cxc
      close(luchk)
   else
      if (ispromol) then
+        if(doedr) &
+           call error('nciplot','cannot do EDR from promolecule',faterr) 
         !$omp parallel do private (x,rho,grad,hess,heigs,hvecs,wk1,wk2,istat,grad2,&
         !$omp dimgrad,intra,rhom,elf,exc) schedule(dynamic)
         do k = 0, nstep(3)-1
@@ -461,7 +522,8 @@ program nciplot
         end do
         !$omp end parallel do
      else
-        call calcprops_wfn(xinit,xinc,nstep,m,nfiles,crho,cgrad,doelf,celf,ixc,cxc)
+        call calcprops_wfn(xinit,xinc,nstep,m,nfiles,crho,cgrad,doelf,celf,doedr,cedr,&
+          doedrdmax,cedrdmax,nedr,edras,ixc,cxc)
         if (inter) then
            !$omp parallel do private (x,rho,grad,hess,intra,rhom,elf,exc) schedule(dynamic)
            do k = 0, nstep(3)-1
@@ -489,6 +551,7 @@ program nciplot
      write (luchk) xinit, xinc, nstep
      write(luchk) crho, cgrad
      if (allocated(celf)) write (luchk) celf
+     if (allocated(cedr)) write (luchk) cedr
      if (allocated(cxc)) write (luchk) cxc
      close(luchk)
   endif
@@ -520,12 +583,16 @@ program nciplot
   if (ludc > 0) call write_cube_body(ludc,nstep,crho)
   if (lugc > 0) call write_cube_body(lugc,nstep,cgrad)
   if (doelf) call write_cube_body(luelf,nstep,celf)
+  if (writeedr) call write_cube_body(luedr,nstep,cedr)
+  if (doedrdmax) call write_cube_body(luedrdmax,nstep,cedrdmax)
   if (all(ixc /= 0)) call write_cube_body(luxc,nstep,cxc)
 
   ! deallocate grids and close files
   if (allocated(crho)) deallocate(crho)
   if (allocated(cgrad)) deallocate(cgrad)
   if (allocated(celf)) deallocate(celf)
+  if (allocated(cedr)) deallocate(cedr)
+  if (allocated(cedrdmax)) deallocate(cedrdmax)
   if (allocated(cxc)) deallocate(cxc)
   if (ludat > 0) close(ludat)
 
@@ -616,6 +683,8 @@ program nciplot
            ' Reduced Density Gradient,RDG  = ',a,/&
            ' Sign(lambda2)xDensity,LS      = ',a,/&
            ' ELF cube file                 = ',a,/&
+           ' EDR cube file                 = ',a,/&
+           ' D(r)cube file                 = ',a,/&
            ' XC energy density cube file   = ',a,/&
            ' LS x RDG                      = ',a,/&
            ' VMD script                    = ',a,/&
@@ -627,6 +696,7 @@ program nciplot
            '-----------------------------------------------------')
 126 format(/'      MIND YOU'/&
             '      ONLY ANALYZING INTERMOLECULAR INTERACTIONS     '/)
+127 format (F05.2)
 
 contains
   subroutine write_cube_header(lu,l1,l2)
