@@ -58,7 +58,7 @@ contains
 
     integer :: i, j, k, m, iat, ip, jp, kp, nn, l(3)
     integer :: ityp, ipri, ipria, ix, imo
-    real*8 :: ex, xl2, xl(3,0:2), x0(3), al
+    real*8 :: ex, xl2, xl(3,0:2), x0(3), al, edrfin
     real*8 :: wk1(3), wk2(3), heigs(3), hvecs(3,3), grad2
     real*8 :: rho53, ebose, df, eelf, eexc
 
@@ -110,7 +110,7 @@ contains
     
     ! run over y and z
     !$omp parallel do private (ip,jp,kp,nn,ipri,iat,al,ex,x0,l,xl,xl2,grad2,rho53,&
-    !$omp ebose,df,heigs,hvecs,wk1,wk2,xamu,istat,eelf,eexc) &
+    !$omp ebose,df,heigs,hvecs,wk1,wk2,xamu,istat,eelf,eexc,amu0,dmax,edrmax,edrfin) &
     !$omp firstprivate(dx,dy,dz,d2,gg,tp,maxc,rhoaux,chi,phi,hess,amu,phiamu,edraux,&
     !$omp ldopri,ldopriamu) schedule(dynamic)
      do j = 0, n(2)-1
@@ -334,11 +334,6 @@ contains
           do ip = 1, n(1)
              ! rho and grad
              rhoaux(ip) = max(rhoaux(ip),1d-30)
-             if(doedr) then 
-                do iedr=1,nedr
-                   edraux(ip,iedr) = max(edraux(ip,iedr),1d-30)
-                end do
-             endif
              grad2 = gg(ip,1)**2 + gg(ip,2)**2 + gg(ip,3)**2
 
              ! tau and elf
@@ -361,6 +356,19 @@ contains
              hess(ip,3,2) = hess(ip,2,3)
              call rs(3,3,hess(ip,:,:),heigs,0,hvecs,wk1,wk2,istat)
 
+             ! edr
+             if(doedr) then 
+                do iedr=1,nedr
+                   edraux(ip,iedr) = max(edraux(ip,iedr),1d-30)
+                end do
+                if(doedrdmax) then
+                   call three_point_interpolation(nedr,edras,edraux(ip,:),dmax,edrmax)
+                   edrfin = dmax
+                else
+                   edrfin = edraux(ip,1)/rhoaux(ip)**0.5d0
+                endif
+             endif
+
              !$omp critical (writeshared)
              ! BGJ test rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
              rho(ip,jp,kp) = rhoaux(ip)
@@ -369,10 +377,9 @@ contains
              if (doxc) xc(ip,jp,kp) = eexc
              if (doedr) then
                 if(doedrdmax) then
-                   call three_point_interpolation(nedr,edras,edraux(ip,:),dmax,edrmax)
-                   edrdmax(ip,jp,kp) = dmax
+                   edrdmax(ip,jp,kp) = edrfin
                 else
-                   edr(ip,jp,kp) = edraux(ip,1)/rhoaux(ip)**0.5d0
+                   edr(ip,jp,kp) = edrfin
                 endif
              endif
              !$omp end critical (writeshared)
