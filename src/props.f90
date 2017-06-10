@@ -370,8 +370,7 @@ contains
              endif
 
              !$omp critical (writeshared)
-             ! BGJ test rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
-             rho(ip,jp,kp) = rhoaux(ip)
+             rho(ip,jp,kp) = sign(rhoaux(ip),heigs(2)) * 100d0
              grad(ip,jp,kp) = sqrt(grad2) / (const * rhoaux(ip)**fothirds)
              if (doelf) elf(ip,jp,kp) = eelf
              if (doxc) xc(ip,jp,kp) = eexc
