@@ -424,8 +424,8 @@ program nciplot
      trim(oname)//"-edr-"//trim(adjustl(edrastring))//".cube",&
      trim(oname)//"-D.cube",&
      trim(oname)//"-xc.cube",&
-     trim(oname)//".vmd",&
      trim(oname)//".dat",&
+     trim(oname)//".vmd",&
      trim(oname)//".ncichk"
      
   ! write cube headers
